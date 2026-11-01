@@ -3,6 +3,7 @@
 probe.exe
 snap.exe
 drive.exe
+iconmaker.exe
 *.obj
 *.res
 *.o
