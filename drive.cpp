@@ -99,20 +99,35 @@ int wmain(int argc, wchar_t** argv) {
     if (argc >= 4) {
         std::wstring bn = ToLower(argv[3]);
         bool clicked = false;
-        for (HWND b : k.buttons) {
-            std::wstring t = ToLower(TextOf(b));
-            if (t.find(bn) == std::wstring::npos) continue;
-            int id = static_cast<int>(GetDlgCtrlID(b));
-            Out(L"klik tombol \"%ls\" (id=%d)\n", TextOf(b).c_str(), id);
-            // BN_CLICKED langsung ke parent: BM_CLICK pada default button bisa
-            // mengirim notifikasi dua kali.
-            SendMessageW(app, WM_COMMAND, MAKEWPARAM(id, BN_CLICKED),
-                         reinterpret_cast<LPARAM>(b));
-            Sleep(400);
-            clicked = true;
-            break;
+        if (!bn.empty() && bn[0] == L'#') {
+            // Klik lewat control id: dipakai tombol yang teksnya gambar bitmap.
+            int want = _wtoi(argv[3] + 1);
+            for (HWND b : k.buttons) {
+                if (static_cast<int>(GetDlgCtrlID(b)) != want) continue;
+                Out(L"klik control id=%d\n", want);
+                SendMessageW(app, WM_COMMAND, MAKEWPARAM(want, BN_CLICKED),
+                             reinterpret_cast<LPARAM>(b));
+                Sleep(400);
+                clicked = true;
+                break;
+            }
         }
-        if (!clicked) Out(L"TOMBOL mengandung \"%ls\" tidak ditemukan\n", argv[3]);
+        if (!clicked) {
+            for (HWND b : k.buttons) {
+                std::wstring t = ToLower(TextOf(b));
+                if (t.find(bn) == std::wstring::npos) continue;
+                int id = static_cast<int>(GetDlgCtrlID(b));
+                Out(L"klik tombol \"%ls\" (id=%d)\n", TextOf(b).c_str(), id);
+                // BN_CLICKED langsung ke parent: BM_CLICK pada default button bisa
+                // mengirim notifikasi dua kali.
+                SendMessageW(app, WM_COMMAND, MAKEWPARAM(id, BN_CLICKED),
+                             reinterpret_cast<LPARAM>(b));
+                Sleep(400);
+                clicked = true;
+                break;
+            }
+        }
+        if (!clicked) Out(L"TOMBOL \"%ls\" tidak ditemukan\n", argv[3]);
     }
     if (k.edit) {
         int len = static_cast<int>(SendMessageW(k.edit, WM_GETTEXTLENGTH, 0, 0));
