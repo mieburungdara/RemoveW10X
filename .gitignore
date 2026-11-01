@@ -1,4 +1,8 @@
-*.exe
+# Aplikasi utama sengaja ikut ke repo supaya bisa langsung dijalankan.
+# Hanya harness verifikasi (dev tool) yang dikecualikan.
+probe.exe
+snap.exe
+drive.exe
 *.obj
 *.res
 *.o

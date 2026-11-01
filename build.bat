@@ -8,11 +8,11 @@ cd /d %~dp0
 set FLAGS=-std=c++20 -O2 -municode -static
 
 rem Aplikasi utama (statis: tidak butuh DLL MinGW saat dijalankan)
-g++ %FLAGS% -mwindows main.cpp -o CloseButtonTool.exe -luser32 -lgdi32 -lcomctl32 || exit /b 1
+g++ %FLAGS% -mwindows main.cpp -o RemoveW10X.exe -luser32 -lgdi32 -lcomctl32 || exit /b 1
 
 rem Harness verifikasi (opsional)
 g++ %FLAGS% probe.cpp -o probe.exe -luser32 -lgdi32 || exit /b 1
 g++ %FLAGS% snap.cpp -o snap.exe -luser32 -lgdi32 -lgdiplus || exit /b 1
 g++ %FLAGS% drive.cpp -o drive.exe -luser32 || exit /b 1
 
-echo Build selesai: CloseButtonTool.exe
+echo Build selesai: RemoveW10X.exe
