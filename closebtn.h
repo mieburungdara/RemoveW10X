@@ -128,13 +128,23 @@ inline bool RestoreCloseButton(HWND hwnd) {
 // lintas proses. Menghapus WS_SYSMENU menghilangkan SEMUA tombol caption
 // (minimize, maximize, close) - terbukti secara visual pada jendela milik proses
 // lain, dan bisa dibalik.
-inline bool SetSysMenuStyle(HWND hwnd, bool enable) {
+// "Already" itu penting: jendela yang memang tidak ber-caption (banyak game,
+// WS_SYSMENU sudah 0) tidak punya apa pun untuk diubah, jadi tidak boleh
+// dilaporkan sebagai keberhasilan.
+enum class StyleResult {
+    Changed,
+    Already,
+    Failed,
+};
+
+inline StyleResult TrySetSysMenuStyle(HWND hwnd, bool enable) {
     LONG_PTR cur = GetWindowLongPtrW(hwnd, GWL_STYLE);
     LONG_PTR want = enable ? (cur | WS_SYSMENU) : (cur & ~static_cast<LONG_PTR>(WS_SYSMENU));
-    if (cur == want) return true;
+    if (cur == want) return StyleResult::Already;
     SetLastError(0);
-    if (SetWindowLongPtrW(hwnd, GWL_STYLE, want) == 0 && GetLastError() != 0) return false;
+    if (SetWindowLongPtrW(hwnd, GWL_STYLE, want) == 0 && GetLastError() != 0)
+        return StyleResult::Failed;
     SetWindowPos(hwnd, nullptr, 0, 0, 0, 0,
                  SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED);
-    return true;
+    return StyleResult::Changed;
 }

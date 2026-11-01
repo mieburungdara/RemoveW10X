@@ -56,7 +56,7 @@ int wmain(int argc, wchar_t** argv) {
         Out(L"pakai: drive <judulApp> <pilihDiCombo> [teksTombol]\n");
         return 2;
     }
-    HWND app = FindByTitle(argv[1]);
+    HWND app = Resolve(argv[1]);
     if (!app) {
         Out(L"aplikasi \"%ls\" tidak ditemukan\n", argv[1]);
         return 1;

@@ -36,8 +36,16 @@ static std::wstring Describe(const Readout& r) { return DescribeMenu(r); }
 
 static void Dump(const wchar_t* label, HWND hwnd) {
     Readout r = ReadClose(hwnd);
+    LONG_PTR st = GetWindowLongPtrW(hwnd, GWL_STYLE);
+    RECT rc{};
+    GetWindowRect(hwnd, &rc);
     Out(L"%ls: hwnd=%p title=\"%ls\" proc=%ls\n", label, (void*)hwnd, WindowTitle(hwnd).c_str(),
         ProcName(hwnd).c_str());
+    Out(L"     style: CAPTION=%d SYSMENU=%d MIN=%d MAX=%d BORDER=%d DLGFRAME=%d rect=%ldx%ld\n",
+        ((st & WS_CAPTION) == WS_CAPTION) ? 1 : 0, (st & WS_SYSMENU) ? 1 : 0,
+        (st & WS_MINIMIZEBOX) ? 1 : 0, (st & WS_MAXIMIZEBOX) ? 1 : 0,
+        (st & WS_BORDER) ? 1 : 0, (st & WS_DLGFRAME) ? 1 : 0, rc.right - rc.left,
+        rc.bottom - rc.top);
     Out(L"     SC_CLOSE = %ls\n", Describe(r).c_str());
 }
 
@@ -136,8 +144,14 @@ int wmain(int argc, wchar_t** argv) {
     if (cmd == L"hide") ok = RemoveCloseButton(hwnd, true);
     else if (cmd == L"gray") ok = RemoveCloseButton(hwnd, false);
     else if (cmd == L"restore") ok = RestoreCloseButton(hwnd);
-    else if (cmd == L"nostyle") ok = SetSysMenuStyle(hwnd, false);
-    else if (cmd == L"yesstyle") ok = SetSysMenuStyle(hwnd, true);
+    else if (cmd == L"nostyle" || cmd == L"yesstyle") {
+        StyleResult r = TrySetSysMenuStyle(hwnd, cmd == L"yesstyle");
+        ok = (r == StyleResult::Changed);
+        Out(L"style %ls => %ls\n", cmd.c_str(),
+            r == StyleResult::Changed    ? L"CHANGED"
+            : r == StyleResult::Already  ? L"ALREADY (tidak ada yang berubah)"
+                                         : L"FAILED");
+    }
     else {
         Out(L"perintah tidak dikenal: %ls\n", cmd.c_str());
         return 2;

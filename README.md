@@ -40,6 +40,11 @@ caption repaints with a dead close button.
 - **Apps that draw their own title bar** (Chrome, Discord, Electron apps) have no
   Win32 caption to modify. The tool says so per window rather than silently doing
   nothing.
+- **Windows that already have no caption buttons** — many games, incl. borderless
+  ones, are created with `WS_SYSMENU` off — are reported as "nothing to remove,
+  nothing was changed". The tool does not claim success there, and **Restore will
+  not switch `WS_SYSMENU` back on** for a window this session never modified:
+  inventing a menu the application never had would be a defect, not a fix.
 - Some windows hand back a system-menu handle that is only valid inside the target
   process (`err 1401`). The tool then resets the menu to get a usable copy and
   retries; if that still fails it tells you to use the second mode.

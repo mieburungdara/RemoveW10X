@@ -40,6 +40,12 @@ Terukur pada jendela yang benar-benar terbuka: jumlah item system menu berubah
 - **Aplikasi yang menggambar title bar sendiri** (Chrome, Discord, aplikasi Electron)
   tidak punya caption Win32 untuk diubah. Aplikasi ini mengatakannya per jendela,
   bukan diam-diam tidak melakukan apa-apa.
+- **Jendela yang memang tidak punya tombol caption** — banyak game, termasuk yang
+  borderless, dibuat dengan `WS_SYSMENU` sudah mati — dilaporkan sebagai "tidak ada
+  yang bisa dihilangkan dan tidak ada yang diubah". Aplikasi ini tidak mengaku
+  berhasil di situ, dan **Kembalikan tidak akan menyalakan `WS_SYSMENU`** pada jendela
+  yang tidak diubah sesi ini: menciptakan menu yang tidak pernah dimiliki aplikasi
+  itu adalah cacat, bukan perbaikan.
 - Sebagian jendela mengembalikan handle system menu yang hanya sah di dalam proses
   target (`err 1401`). Kalau begitu, aplikasi mereset menu lebih dulu untuk mendapat
   salinan yang bisa dipakai lalu mencoba lagi; jika tetap gagal, Anda diarahkan ke

@@ -66,6 +66,11 @@ struct L10N {
     const wchar_t* closeStill;
     const wchar_t* stateChange;
     const wchar_t* switched;
+    const wchar_t* noCaptionAtAll;
+    const wchar_t* styleAlreadyOff;
+    const wchar_t* styleAlreadyOn;
+    const wchar_t* restoreNoRecord;
+    const wchar_t* recorded;
 };
 
 static const L10N kEn = {
@@ -117,6 +122,15 @@ static const L10N kEn = {
                   L"this process)",
     .stateChange = L"before={0}  after={1}",
     .switched = L"Language switched to English.",
+    .noCaptionAtAll = L"This window has no Win32 caption buttons at all (WS_SYSMENU is already "
+                      L"off) - there is nothing to remove and nothing was changed. Games and "
+                      L"custom-drawn windows usually fall in this group.",
+    .styleAlreadyOff = L"WS_SYSMENU was already OFF - nothing changed.",
+    .styleAlreadyOn = L"WS_SYSMENU was already ON - nothing changed.",
+    .restoreNoRecord = L"This session did not turn WS_SYSMENU off for that window, so it is left "
+                       L"alone: adding a menu the application never had would be wrong. Restart "
+                       L"the target app to get its buttons back.",
+    .recorded = L"Recorded: this session turned the caption off, so Restore may write it back.",
 };
 
 static const L10N kId = {
@@ -169,6 +183,16 @@ static const L10N kId = {
                   L"diterima Windows)",
     .stateChange = L"sebelum={0}  sesudah={1}",
     .switched = L"Bahasa diubah ke Indonesia.",
+    .noCaptionAtAll = L"Jendela ini sama sekali tidak punya tombol caption Win32 (WS_SYSMENU "
+                      L"sudah off) - tidak ada yang bisa dihilangkan dan tidak ada yang diubah. "
+                      L"Game dan jendela custom biasanya masuk golongan ini.",
+    .styleAlreadyOff = L"WS_SYSMENU sudah OFF sejak awal - tidak ada yang diubah.",
+    .styleAlreadyOn = L"WS_SYSMENU sudah ON sejak awal - tidak ada yang diubah.",
+    .restoreNoRecord = L"Sesi ini tidak mematikan WS_SYSMENU pada jendela itu, jadi dibiarkan "
+                       L"apa adanya: menambahkan menu yang tidak pernah dimiliki aplikasi justru "
+                       L"salah. Jalankan ulang aplikasi target untuk memulihkan tombolnya.",
+    .recorded = L"Dicatat: sesi ini mematikan caption jendela ini, jadi Kembalikan boleh "
+                L"menuliskannya kembali.",
 };
 
 static const L10N* S = &kEn;
@@ -189,6 +213,11 @@ static HBITMAP g_flagEn = nullptr;
 static HICON g_iconBig = nullptr;
 static HICON g_iconSmall = nullptr;
 static std::vector<HWND> g_items;
+// Catatan sesi: jendela yang KAMI matikan WS_SYSMENU-nya. Tanpa catatan ini,
+// "Restore" bisa menambahkan menu yang tidak pernah dimiliki aplikasi (game
+// borderless) - style kelas jendela tidak menyimpan WS_SYSMENU, jadi tidak bisa
+// dibedakan dari sana.
+static std::vector<HWND> g_styleOffByUs;
 static DWORD g_ownPid = 0;
 
 static void RefreshList();
@@ -440,7 +469,12 @@ static void DoHideX() {
     HWND hwnd = Selected();
     if (!hwnd) return;
     MenuProbe before = ProbeClose(hwnd);
-    if (before.hasStyle && !before.readable) {
+    if (!before.hasStyle) {
+        Log(Fmt(S->targetLine, {TargetLabel(hwnd)}));
+        Log(S->noCaptionAtAll);
+        return;
+    }
+    if (!before.readable) {
         // Terukur: proses baru sering mendapat handle menu yang tidak bisa dipakai.
         // Reset (GetSystemMenu TRUE) membuat salinan yang sah di proses ini, dan
         // sekaligus mengembalikan menu ke default.
@@ -465,13 +499,23 @@ static void DoHideX() {
 static void DoHideCaption() {
     HWND hwnd = Selected();
     if (!hwnd) return;
-    bool ok = SetSysMenuStyle(hwnd, false);
     Log(Fmt(S->targetLine, {TargetLabel(hwnd)}));
-    if (!ok) {
+    if (!ProbeClose(hwnd).hasStyle) {
+        Log(S->noCaptionAtAll);
+        return;
+    }
+    StyleResult r = TrySetSysMenuStyle(hwnd, false);
+    if (r == StyleResult::Failed) {
         Log(Fmt(S->styleOffFail, {LastErrorText()}));
         return;
     }
+    if (r == StyleResult::Already) {
+        Log(S->styleAlreadyOff);
+        return;
+    }
+    g_styleOffByUs.push_back(hwnd);
     Log(S->styleOffOk);
+    Log(S->recorded);
     Log(S->styleMenuNote);
 }
 
@@ -479,14 +523,26 @@ static void DoRestore() {
     HWND hwnd = Selected();
     if (!hwnd) return;
     MenuProbe before = ProbeClose(hwnd);
-    bool styleBack = SetSysMenuStyle(hwnd, true);
-    std::wstring styleErr = styleBack ? L"" : LastErrorText();
+    auto it = std::find(g_styleOffByUs.begin(), g_styleOffByUs.end(), hwnd);
+    bool ours = it != g_styleOffByUs.end();
+    if (ours) g_styleOffByUs.erase(it);
+
+    Log(Fmt(S->targetLine, {TargetLabel(hwnd)}));
+    if (ours) {
+        StyleResult r = TrySetSysMenuStyle(hwnd, true);
+        if (r == StyleResult::Changed) {
+            Log(Fmt(S->styleOnLine, {std::wstring(S->ok)}));
+        } else if (r == StyleResult::Already) {
+            Log(S->styleAlreadyOn);
+        } else {
+            Log(Fmt(S->styleOnLine, {std::wstring(S->fail) + L" err=" + LastErrorText()}));
+        }
+    } else {
+        Log(S->restoreNoRecord);
+    }
+
     RestoreCloseButton(hwnd);
     MenuProbe after = ProbeClose(hwnd);
-    Log(Fmt(S->targetLine, {TargetLabel(hwnd)}));
-    std::wstring styleResult =
-        styleBack ? std::wstring(S->ok) : std::wstring(S->fail) + L" err=" + styleErr;
-    Log(Fmt(S->styleOnLine, {styleResult}));
     if (after.state == CloseState::Enabled) {
         Log(Fmt(S->closeEnabled, {std::to_wstring(after.items)}));
     } else {
