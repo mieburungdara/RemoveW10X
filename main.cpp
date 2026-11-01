@@ -186,6 +186,8 @@ static HWND g_btnEn = nullptr;
 static HFONT g_font = nullptr;
 static HBITMAP g_flagId = nullptr;
 static HBITMAP g_flagEn = nullptr;
+static HICON g_iconBig = nullptr;
+static HICON g_iconSmall = nullptr;
 static std::vector<HWND> g_items;
 static DWORD g_ownPid = 0;
 
@@ -578,6 +580,8 @@ static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wp, LPARAM lp) {
             return reinterpret_cast<LRESULT>(GetSysColorBrush(COLOR_BTNFACE));
         }
         case WM_DESTROY:
+            if (g_iconBig) DestroyIcon(g_iconBig);
+            if (g_iconSmall) DestroyIcon(g_iconSmall);
             if (g_flagId) DeleteObject(g_flagId);
             if (g_flagEn) DeleteObject(g_flagEn);
             if (g_font) DeleteObject(g_font);
@@ -610,6 +614,15 @@ int wWinMain(HINSTANCE inst, HINSTANCE, PWSTR, int show) {
                                 WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX,
                                 CW_USEDEFAULT, CW_USEDEFAULT, 760, 430, nullptr, nullptr, inst,
                                 nullptr);
+    // Icon dari resource yang sama dipakai judul jendela + taskbar, supaya
+    // yang dilihat user di layar identik dengan icon file exe.
+    g_iconBig = (HICON)LoadImageW(inst, MAKEINTRESOURCEW(1), IMAGE_ICON, 32, 32, LR_DEFAULTCOLOR);
+    g_iconSmall =
+        (HICON)LoadImageW(inst, MAKEINTRESOURCEW(1), IMAGE_ICON, 16, 16, LR_DEFAULTCOLOR);
+    if (g_iconBig) SendMessageW(hwnd, WM_SETICON, ICON_BIG, reinterpret_cast<LPARAM>(g_iconBig));
+    if (g_iconSmall)
+        SendMessageW(hwnd, WM_SETICON, ICON_SMALL, reinterpret_cast<LPARAM>(g_iconSmall));
+
     ShowWindow(hwnd, show ? show : SW_SHOWDEFAULT);
 
     MSG msg{};
