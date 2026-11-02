@@ -77,6 +77,7 @@ found). Static output runs anywhere.
 | `app.rc`, `app.ico` | exe icon (see `iconmaker.cpp`) |
 | `iconmaker.cpp` | draws the icon at 7 sizes and packs a valid ICO |
 | `probe.cpp` | CLI harness: state / hide / gray / restore / nostyle / tryclose |
+| `allwins.cpp` | every window of one process, with styles - tells you which hwnd you actually hit |
 | `snap.cpp` | captures a window with `PrintWindow` to PNG |
 | `drive.cpp` | clicks the app's own buttons and dumps its log, for testing |
 | `bukti/` | visual evidence of the two modes and the icon |

@@ -80,6 +80,7 @@ di `PATH`, dan binary yang di-link dinamis mati saat dimuat dengan `0xC0000139`
 | `app.rc`, `app.ico` | ikon exe (dibuat `iconmaker.cpp`) |
 | `iconmaker.cpp` | menggambar ikon pada 7 ukuran dan mengemasnya jadi ICO valid |
 | `probe.cpp` | harness CLI: state / hide / gray / restore / nostyle / tryclose |
+| `allwins.cpp` | semua jendela milik satu proses lengkap dengan style-nya - untuk tahu hwnd mana yang sebenarnya Anda sentuh |
 | `snap.cpp` | menangkap jendela dengan `PrintWindow` ke PNG |
 | `drive.cpp` | mengklik tombol aplikasi ini sendiri lalu menDump lognya, untuk pengujian |
 | `bukti/` | bukti visual kedua mode dan ikon |

@@ -4,6 +4,7 @@ probe.exe
 snap.exe
 drive.exe
 iconmaker.exe
+allwins.exe
 *.obj
 *.res
 *.o
